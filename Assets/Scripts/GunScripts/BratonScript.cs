@@ -28,7 +28,7 @@ public class BratonScript : WeaponBase {
 		currentAmmo = maxAmmo;
 		reloadDelay = 3f;
 		automatic = true;
-		_bulletForce = 100f;
+		_bulletForce = 2000f;
 
 		//Animator stuff
 		_playerAnim.SetBool("FullAuto_b", true);

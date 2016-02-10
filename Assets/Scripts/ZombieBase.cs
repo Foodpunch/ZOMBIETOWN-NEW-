@@ -16,18 +16,20 @@ public abstract class ZombieBase : MonoBehaviour{
 	//Zombie Movement RelatedVariables
 	Transform target;
 
-	Vector3 direction;
+	Vector3 direction;		
 	Quaternion rotate;
 	Vector3 leftRayDirection;
 	Vector3 rightRayDirection;
 	RaycastHit hitLeft;
 	RaycastHit hitRight;
 	Vector3 hitNormal;
+	float heightOffset; 
 	[SerializeField] float speed = 2f;
 	[SerializeField] float steerForce;
 	[SerializeField] float rotateSpeed;
 	[SerializeField] float translateSpeed;
 	[SerializeField] float minimumDistanceToAvoid;
+	[SerializeField] LayerMask zombieLayerMask;
 
 	//Pathfinding Variables
 	float rotationSpeed = 5f;
@@ -54,6 +56,7 @@ public abstract class ZombieBase : MonoBehaviour{
  		IDLE,		//Zombie IDLE
 		WANDER,		//Roam or wander whatever, Patrol?
 		CHASE,		//Chase player
+		//COOLDOWN,	//Cooldown from attacking the player?
 		FLEE,		//Run from player
 		DEATH,		//Die
 		//Zombie should have an attack, but he touches to hurt you.
@@ -63,12 +66,15 @@ public abstract class ZombieBase : MonoBehaviour{
 	protected State ZombieState;
 	State previousState;
 
+
 	protected virtual void Start() //Zombie start
 	{
 		target = GameObject.FindGameObjectWithTag("Player").GetComponent<Transform>(); //Target (player)
 		HealthBar = gameObject.transform.GetChild(0).transform.GetChild(0).GetComponent<Slider>();
 		ZombieAnim = GetComponent<Animator>(); //zombie animator component
 		FindNewTargetPosition();
+		heightOffset = 2f;
+		minimumDistanceToAvoid = 2f;
 		//_wayPoint = areaCenter + (Utilities.OnUnitRect(rectSize.x, rectSize.z)) * rectMagnitude;
 	//	_rbZombie = GetComponent<Rigidbody>(); //zombie's rigidbody component
 	
@@ -76,9 +82,12 @@ public abstract class ZombieBase : MonoBehaviour{
 	
 	protected virtual void Update()
 	{
-		gameTime += Time.deltaTime; //calculates time elapsed. Essentially a timer
 		attackCooldown += Time.deltaTime; //Attack cooldown timer
 		CheckHealth();		 //Updates the slider
+		if (Input.GetKeyDown(KeyCode.H))
+		{
+			ChangeState(0f, State.IDLE);
+		}
 		
 	}
 	void FixedUpdate()
@@ -89,30 +98,47 @@ public abstract class ZombieBase : MonoBehaviour{
 	
 	protected void ZombieLogic()
 	{
-		currRange = Utilities.instance.DistanceBetween(transform.position, target.position);
-		if (currRange < aggroRange)
-		{
-			ChangeState(0f, State.CHASE);
-		}
-		switch (ZombieState)
+		gameTime += Time.deltaTime; //calculates time elapsed. Essentially a timer
+		currRange = Utilities.instance.DistanceBetween(transform.position, target.position); //finds range between player and zombie
+		
+		switch (ZombieState) //zambie state machine
 		{
  			//Idle state, when lose aggro and stuff
 			case State.IDLE:
 				ZombieAnim.SetBool("bIdle", true);
-				ChangeState(5f, State.WANDER);
-				
+				if (!isAggro()) //if player is not in range
+				{
+					ChangeState(5f, State.WANDER); //wander about aimlessly, doing zmbie things
+				}
+				else if (isAggro()) //but if the pplayer is in range..
+				{
+					if (previousState == State.CHASE) //and zambie hit the player just now,
+					{
+						ChangeState(2f, State.CHASE); //wait awhile before chasing the player again
+					}
+					else					//but if zambie wasn't chasing the player before,
+					{
+						ChangeState(0f, State.CHASE); //zambie better chase the damn player now.
+					}
+				}
+				//yes I intentionally spelt it as zambie	
 				break;
 			//Wander state, not necessarily looking for player, just walking around, doing zombie stuff.
 			case State.WANDER:
 				//maybe vary, sometimes patrol, sometimes wander?
 				ZombieAnim.SetBool("bWalk", true);
 				MovementLogic(transform.position, _wayPoint, speed/2, true);
+				if (isAggro())
+				{
+					ChangeState(0f, State.CHASE);
+				}
 				break;
 			//Found the player, chase after him NOW
 			case State.CHASE:
 				ZombieAnim.SetBool("bWalk", true);
-				MovementLogic(transform.position,target.position,speed);  //Logic for chasing and not walking through walls
-				if (currRange > aggroRange) //range checker
+			//	MovementLogic(transform.position,target.position,speed);  //Logic for chasing and not walking through walls
+				ChaseLogic();
+				if(!isAggro())
 				{
 					ChangeState(0f, State.WANDER);
 				}
@@ -122,6 +148,7 @@ public abstract class ZombieBase : MonoBehaviour{
 				break;
 			//If I die, I die.
 			case State.DEATH:
+				//should make it chance, sometimes play anim, sometimes ragdoll. (should have higher chance to ragdoll pls thx)
 			//	ZombieAnim.Play("Death_02");
 				HealthBar.gameObject.SetActive(false);
 				ActivateRagdoll();
@@ -133,10 +160,9 @@ public abstract class ZombieBase : MonoBehaviour{
 
 		}
 	}
-	void Reset(State lastState) //state reset logic
+	void Reset() //state reset logic
 	{
 		gameTime = 0.0f; //resets time
-		previousState = lastState; //saves previous state just incase?
 		ZombieAnim.SetBool("bIdle", false);
 		ZombieAnim.SetBool("bWalk", false);
 		ZombieAnim.SetBool("bEating", false);
@@ -145,8 +171,9 @@ public abstract class ZombieBase : MonoBehaviour{
 	{
 		if (gameTime > timeBeforeStateChange) //if the time exceeds the time limit for the state
 		{
+			previousState = ZombieState; //saves previous state before it changes
 			ZombieState = nextState; //change curr state to next state
-			Reset(ZombieState); //reset the state, and send curr state to save as prev state
+			Reset(); //reset the state, and send curr state to save as prev state
 		}
 	}
 	void MovementLogic(Vector3 A, Vector3 B, float _speed,bool isRoaming = false)
@@ -176,39 +203,48 @@ public abstract class ZombieBase : MonoBehaviour{
 
 		leftRayDirection = transform.TransformDirection(new Vector3(-1, 0, 1)); //left feeler
 		rightRayDirection = transform.TransformDirection(new Vector3(1, 0, 1)); //right feeler
+		Debug.DrawRay(transform.position + (Vector3.up*heightOffset), leftRayDirection, Color.blue);
+		Debug.DrawRay(transform.position + (Vector3.up * heightOffset), rightRayDirection, Color.blue);
 
 		RaycastHit hit;		//middle ray hit info
 		// MIDDLE FEELER
-		if (Physics.Raycast(transform.position, transform.forward, out hit, 4))
+		if (Physics.SphereCast(transform.position + (Vector3.up * heightOffset), 0.2f, transform.forward, out hit, 2, zombieLayerMask))
 		{
 			if (hit.transform != transform)
 			{ // Intersection with own collider is omitted
 				Vector3 MiddleHitNormal = hit.normal;
-				Debug.DrawLine(transform.position, hit.point, Color.green);
+				Debug.DrawLine(transform.position + (Vector3.up * heightOffset), hit.point, Color.green);
 				MiddleHitNormal.y = 0.0f;
 				direction += hit.normal * 50;
 			}
+			CheckCollision(hit);
+			
 		}
 		//LEFT FEELER
-		if (Physics.Raycast(transform.position, leftRayDirection, out hitLeft, minimumDistanceToAvoid))
+		if (Physics.SphereCast(transform.position + (Vector3.up * heightOffset), 0.2f, leftRayDirection, out hitLeft, minimumDistanceToAvoid, zombieLayerMask))
 		{
 			if (hitLeft.transform != transform)
 			{ // Intersection with own collider is omitted
 				MoveLeft();
 			}
+			CheckCollision(hitLeft);
 		}
 		//RIGHT FEELER
-		if (Physics.Raycast(transform.position, rightRayDirection, out hitRight, minimumDistanceToAvoid))
+		if (Physics.SphereCast(transform.position + (Vector3.up * heightOffset), 0.2f, rightRayDirection, out hitRight, minimumDistanceToAvoid, zombieLayerMask))
 		{
 			if (hitRight.transform != transform)
 			{ // Intersection with own collider is omitted
 				MoveRight();
 			}
+			CheckCollision(hitRight);
 		}
 		direction.y = 0;
 		rotate = Quaternion.LookRotation(direction.normalized);
-		transform.rotation = Quaternion.Slerp(transform.rotation, rotate, Time.deltaTime * rotateSpeed);
-		transform.position += transform.forward * Time.deltaTime * translateSpeed;
+		if (Utilities.instance.DistanceBetween(transform.position, target.position) > 1.5f)
+		{
+			transform.rotation = Quaternion.Slerp(transform.rotation, rotate, Time.deltaTime * rotateSpeed);
+			transform.position += transform.forward * Time.deltaTime * translateSpeed;
+		}
 	
 	}
 	void MoveLeft() //Decide what happens when left feeler touches something
@@ -233,6 +269,30 @@ public abstract class ZombieBase : MonoBehaviour{
 			//ZombieAnim.Play("Death_02");
 			//Invoke("ActivateRagdoll", 0);
 			ChangeState(0, State.DEATH);
+		}
+	}
+	void CheckCollision(RaycastHit _hit)
+	{
+		if (_hit.collider.gameObject.CompareTag("Player"))
+		{
+			if (attackCooldown > 2f) //Zombies can only hurt you ever 2 seconds
+			{
+				ChangeState(0f, State.IDLE);
+				attackCooldown = 0;
+				_hit.collider.gameObject.SendMessage("Damage", damage, SendMessageOptions.DontRequireReceiver); //send damage to player
+				Debug.Log("Hit");
+			}
+		}
+	}
+	bool isAggro()
+	{
+		if (currRange < aggroRange)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 	public void CalculateDamage(BodyDamageInfo _damageTaken)
@@ -305,7 +365,8 @@ public abstract class ZombieBase : MonoBehaviour{
 		Gizmos.DrawWireCube(areaCenter + (cubePos * rectMagnitude), rectSize * rectMagnitude);
 		Gizmos.color = Color.red;
 		Gizmos.DrawWireCube(_wayPoint, new Vector3(1, 1, 1));
-		Gizmos.DrawSphere(hitRight.point, 0.05f);
+		Gizmos.DrawSphere(hitRight.point, 0.2f);
+		Gizmos.DrawSphere(hitLeft.point, 0.2f);
 	}
 	
 }
