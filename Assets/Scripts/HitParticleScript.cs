@@ -3,11 +3,13 @@ using System.Collections;
 
 public class HitParticleScript : MonoBehaviour {
 
+    [SerializeField] int hideTime;
+
 	//Script for particle 
 	void OnEnable ()  //On Enable for the object pooling
 	{
-		Invoke("HideMe", 1f); //calls the function to hide it in 1 second
-	}
+		Invoke("HideMe", hideTime); //calls the function to hide it in 1 second
+    }
 	void HideMe()
 	{
 		gameObject.SetActive(false); //hides object

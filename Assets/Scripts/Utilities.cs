@@ -24,8 +24,14 @@ public class Utilities : MonoBehaviour {
 	}
 	ImageEffect effectType;
 	Image _imgHold;
+    Image _imgHold2;
+
 	bool bFade;
+    bool bFlash;
+
 	float _alpha;
+    float _alpha2;
+
 
 	// Use this for initialization
 	void Start () {
@@ -42,20 +48,30 @@ public class Utilities : MonoBehaviour {
 
 	public void ImageFunction(Image _img, ImageEffect _effect)
 	{
-		if(!bFade)
-		{
-			bFade = true;
-			_imgHold = _img;
-			switch (_effect)
-			{
-				case ImageEffect.FADEINFADEOUT:
-					StartCoroutine("Fade");
-					break;
-				case ImageEffect.FLASHTOFADE:
-					StartCoroutine("Flash");
-					break;
-			}
-		}
+        switch (_effect)
+        {
+            //case ImageEffect.FADEINFADEOUT:
+            //    if (!bFade && !bFlash)
+            //    {
+            //        bFade = true;
+            //        _imgHold = _img;
+            //        StartCoroutine("Flash2");
+            //    }
+            //    break;
+            case ImageEffect.FLASHTOFADE:
+                if (!bFlash)
+                {
+                    //bFlash = true;
+                    _imgHold = _img;
+                    StartCoroutine("Flash2");
+                    _imgHold2 = _img;
+                    StartCoroutine("Flash");
+                }
+               
+                break;
+        }
+       
+       
 	}
 	void CheckBooleans()
 	{
@@ -63,25 +79,45 @@ public class Utilities : MonoBehaviour {
 		{
 			_imgHold.color = new Color(_imgHold.color.r, _imgHold.color.g, _imgHold.color.b, _alpha);
 		}
-		if(camShake > 0)
+        if (_imgHold2 != null)
+        {
+            _imgHold2.color = new Color(_imgHold2.color.r, _imgHold2.color.g, _imgHold2.color.b, _alpha2);
+        }
+
+        if (camShake > 0)
 		{
 			//insert camera shake functions here
 		}
 	}
 	IEnumerator Flash()
 	{
-		_alpha = 1;
-		yield return new WaitForSeconds(0.5f);
-		for(float j=1;j>0;j-=Time.deltaTime)
+		_alpha2 = 1;
+		yield return new WaitForSeconds(2f);
+		for(float j=1;j>0;j-=Time.deltaTime/2f)
 		{
-			_alpha = j;
+			_alpha2 = j;
 			yield return null;
 		}
-		_alpha = 0;
+		_alpha2 = 0;
 		yield return new WaitForSeconds(2f);
-		bFade = false;
+		bFlash = false;
+  
 	}
-	IEnumerator Fade()
+    IEnumerator Flash2()
+    {
+        _alpha = 1;
+        yield return new WaitForSeconds(0.1f);
+        for (float j = 1; j > 0; j -= Time.deltaTime)
+        {
+            _alpha = j;
+            yield return null;
+        }
+        _alpha = 0;
+        yield return new WaitForSeconds(2f);
+        bFade = false;
+
+    }
+    IEnumerator Fade()
 	{
 		for(float i = 0; i < 1;i+=Time.deltaTime*3.5f)
 		{
@@ -89,7 +125,7 @@ public class Utilities : MonoBehaviour {
 			yield return null;
 		}
 		_alpha = 1;
-		yield return new WaitForSeconds(2);
+		yield return new WaitForSeconds(0.5f);
 		for(float k = 1;k>0;k-=Time.deltaTime)
 		{
 			_alpha = k;
@@ -97,7 +133,8 @@ public class Utilities : MonoBehaviour {
 		}
 		_alpha = 0;
 		yield return new WaitForSeconds(1);
-		bFade = false;
+        bFade = false;
+
 	}
 	public static Vector3 OnUnitRect(float x, float z)
 	{

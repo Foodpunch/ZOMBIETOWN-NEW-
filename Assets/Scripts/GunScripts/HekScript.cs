@@ -17,10 +17,10 @@ public class HekScript : WeaponBase {
 	{
 		base.Start(); //Get tags for ammo counter and reload thing
 		damage = 3;
-		maxAmmo = 4;
+		maxAmmo = 6;
 		totalAmmo = 90;
 		currentAmmo = maxAmmo;
-		reloadDelay = 0.3f;
+		reloadDelay = 0.5f;
 		fireDelay = 0.8f;
 		_bulletForce = 500f;
 		automatic = false;
@@ -32,8 +32,16 @@ public class HekScript : WeaponBase {
 		_playerAnim.SetFloat("Body_Vertical_f", 0.0f);
 		
 	}
+    void OnEnable() //sets the animator back when you renable them
+    {
+        //Weapon anim stuff
+        _playerAnim.SetBool("FullAuto_b", false);
+        _playerAnim.SetInteger("WeaponType_int", 4);
+        _playerAnim.SetFloat("Body_Horizontal_f", 0.6f);
+        _playerAnim.SetFloat("Body_Vertical_f", 0.0f);
+    }
 
-	protected override void PrimaryFire()
+    protected override void PrimaryFire()
 	{
 		for (int i = 0; i < pelletCount; i++)
 		{
@@ -47,11 +55,28 @@ public class HekScript : WeaponBase {
 				hitInfo.damage = damage;
 				hitInfo.raycastHit = hit;
 				hitInfo.bulletForce = _bulletForce;
-				hitInfo.shooterPos = gameObject.transform.position;
+                hitInfo._forceMode = HitInfo.ForceType.NORMAL;
+                hitInfo.shooterPos = gameObject.transform.position;
 				SpawnFakeBullet(hitInfo);
 			//	hit.collider.gameObject.SendMessage("GunHitInfo", hitInfo, SendMessageOptions.DontRequireReceiver);
-				SpawnParticles(hitInfo);
+				if(hit.collider.gameObject.CompareTag("zombie"))
+                {
+                    SpawnBlood(hitInfo);
+                }
+                else
+                {
+                    SpawnParticles(hitInfo);
+                }
 			}
 		}
 	}
+    protected override void CheatCode()
+    {
+        maxAmmo = 99;
+        currentAmmo = maxAmmo;
+        totalAmmo = 999;
+        reloadDelay = 0.1f;
+        fireDelay = 0.1f;
+        automatic = false;
+    }
 }

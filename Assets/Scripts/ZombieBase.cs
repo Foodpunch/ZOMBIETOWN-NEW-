@@ -4,50 +4,55 @@ using System.Collections;
 
 public abstract class ZombieBase : MonoBehaviour{
 
-	float gameTime;
-	float attackCooldown;
-	float aggroRange = 10f;
-	float currRange;
+	float gameTime;         //state timer
+	protected float attackCooldown;   //cooldown for zombie attack
+	protected float aggroRange = 10f;     //aggro range for zombie
+	float currRange;            //curr range of player and zombie
 	//Zombie stat stuff
 	//protected float maxHealth;
-	protected float health;
-	protected float damage;
+	protected float health;        //default starting health is 100
+	protected float damage;     //technically obsoleted due to new health system
 	
 	//Zombie Movement RelatedVariables
-	Transform target;
+	protected Transform target;          //technically should name this to player
 
-	Vector3 direction;		
-	Quaternion rotate;
-	Vector3 leftRayDirection;
-	Vector3 rightRayDirection;
-	RaycastHit hitLeft;
-	RaycastHit hitRight;
-	Vector3 hitNormal;
+	Vector3 direction;		    //direction of zombie to target
+	Quaternion rotate;             //for rotatating to face target
+	Vector3 leftRayDirection;       //vector to point sphere cast in left direction
+	Vector3 rightRayDirection;      //vector to point sphere cast in right direction
+	RaycastHit hitLeft;             //stores hit data
+	RaycastHit hitRight;            //also stores hit data
+	Vector3 hitNormal;              //normal direction of hit
 	float heightOffset; 
-	[SerializeField] float speed = 2f;
-	[SerializeField] float steerForce;
-	[SerializeField] float rotateSpeed;
-	[SerializeField] float translateSpeed;
-	[SerializeField] float minimumDistanceToAvoid;
-	[SerializeField] LayerMask zombieLayerMask;
+	[SerializeField] float speed = 2f;      //speed of zombie
+	[SerializeField] float steerForce;      //how much the zombie should turn away when bumping in to wall
+	[SerializeField] float rotateSpeed;     //rotation speed when WANDERING, not chasing   
+	[SerializeField] float minimumDistanceToAvoid; //distance before bumping into thing
+	[SerializeField] LayerMask zombieLayerMask;     //layer mask to check collisions
 
 	//Pathfinding Variables
-	float rotationSpeed = 5f;
+//	float rotationSpeed = 5f;
 	float minDistToReach = 3f;
 	[SerializeField]protected Vector3 areaCenter;
 	[SerializeField]protected Vector3 rectSize;
 	[SerializeField]protected float rectMagnitude = 2f;
 	protected Vector3 _wayPoint;
 
-
+    //ragdoll stuff
 	[SerializeField]
 	Rigidbody[] _ragdollParts;
 	bool bRagdoll;
 
-
+    //animator stuff
 	Animator ZombieAnim;
-	//Rigidbody _rbZombie;
+    [SerializeField] protected int i_zombieAnim;
 
+    //sound stuff
+    protected AudioSource ZombieSource;
+    [SerializeField] AudioClip[] zombieSounds;
+
+    //Rigidbody _rbZombie;
+    bool _SpecialAttack = false;
 	//UI related stuff
 	protected Slider HealthBar;
 	
@@ -72,6 +77,7 @@ public abstract class ZombieBase : MonoBehaviour{
 		target = GameObject.FindGameObjectWithTag("Player").GetComponent<Transform>(); //Target (player)
 		HealthBar = gameObject.transform.GetChild(0).transform.GetChild(0).GetComponent<Slider>();
 		ZombieAnim = GetComponent<Animator>(); //zombie animator component
+        ZombieSource = GetComponent<AudioSource>();
 		FindNewTargetPosition();
 		heightOffset = 2f;
 		minimumDistanceToAvoid = 2f;
@@ -84,10 +90,10 @@ public abstract class ZombieBase : MonoBehaviour{
 	{
 		attackCooldown += Time.deltaTime; //Attack cooldown timer
 		CheckHealth();		 //Updates the slider
-		if (Input.GetKeyDown(KeyCode.H))
-		{
-			ChangeState(0f, State.IDLE);
-		}
+		//if (Input.GetKeyDown(KeyCode.H))
+		//{
+		//	ChangeState(0f, State.IDLE);
+		//}
 		
 	}
 	void FixedUpdate()
@@ -105,39 +111,66 @@ public abstract class ZombieBase : MonoBehaviour{
 		{
  			//Idle state, when lose aggro and stuff
 			case State.IDLE:
-				ZombieAnim.SetBool("bIdle", true);
+                //ZombieAnim.Play(idleAnim); //plays idle animation
+                ZombieAnim.SetInteger("iAnimNum", i_zombieAnim);
+                ZombieAnim.SetBool("bIdle", true);
 				if (!isAggro()) //if player is not in range
 				{
-					ChangeState(5f, State.WANDER); //wander about aimlessly, doing zmbie things
+                   
+                    ChangeState(5f, State.WANDER); //wander about aimlessly, doing zmbie things
 				}
 				else if (isAggro()) //but if the pplayer is in range..
 				{
 					if (previousState == State.CHASE) //and zambie hit the player just now,
 					{
-						ChangeState(2f, State.CHASE); //wait awhile before chasing the player again
+                       //Put in possible attack stuff
+                        ChangeState(2f, State.CHASE); //wait awhile before chasing the player again
+                        if(!_SpecialAttack)
+                        {
+                            _SpecialAttack = true;
+                            Invoke("SpecialAttack", 2.2f);
+                        }
+                        if(!ZombieSource.isPlaying)
+                        {
+                            ZombieSource.clip = zombieSounds[Mathf.RoundToInt(Random.Range(0, zombieSounds.Length - 1))];
+                            ZombieSource.PlayDelayed(2f);
+                        }
 					}
 					else					//but if zambie wasn't chasing the player before,
 					{
-						ChangeState(0f, State.CHASE); //zambie better chase the damn player now.
+                          if(!ZombieSource.isPlaying)
+                        {
+                            ZombieSource.clip = zombieSounds[Mathf.RoundToInt(Random.Range(0, zombieSounds.Length - 1))];
+                            ZombieSource.Play();
+                        }
+                        ChangeState(0f, State.CHASE); //zambie better chase the damn player now.
 					}
 				}
 				//yes I intentionally spelt it as zambie	
 				break;
 			//Wander state, not necessarily looking for player, just walking around, doing zombie stuff.
 			case State.WANDER:
-				//maybe vary, sometimes patrol, sometimes wander?
-				ZombieAnim.SetBool("bWalk", true);
+                //maybe vary, sometimes patrol, sometimes wander?
+                
+                ZombieAnim.SetBool("bWalk", true);
 				MovementLogic(transform.position, _wayPoint, speed/2, true);
 				if (isAggro())
 				{
-					ChangeState(0f, State.CHASE);
+                    ChangeState(0f, State.CHASE);
 				}
 				break;
 			//Found the player, chase after him NOW
 			case State.CHASE:
-				ZombieAnim.SetBool("bWalk", true);
-			//	MovementLogic(transform.position,target.position,speed);  //Logic for chasing and not walking through walls
-				ChaseLogic();
+                
+                ZombieAnim.SetBool("bWalk", true);
+                
+                if (!ZombieSource.isPlaying)
+                {
+                    ZombieSource.clip = zombieSounds[Mathf.RoundToInt(Random.Range(0, zombieSounds.Length - 1))];
+                    ZombieSource.PlayDelayed(2f);
+                }
+                //	MovementLogic(transform.position,target.position,speed);  //Logic for chasing and not walking through walls
+                ChaseLogic();
 				if(!isAggro())
 				{
 					ChangeState(0f, State.WANDER);
@@ -151,9 +184,12 @@ public abstract class ZombieBase : MonoBehaviour{
 				//should make it chance, sometimes play anim, sometimes ragdoll. (should have higher chance to ragdoll pls thx)
 			//	ZombieAnim.Play("Death_02");
 				HealthBar.gameObject.SetActive(false);
-				ActivateRagdoll();
-			
-//				gameObject.GetComponent<Collider>().enabled = false;
+				if(!bRagdoll)
+                {
+                    bRagdoll = true;
+                    ActivateRagdoll();
+                    GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>().AddKillCount();
+                }
 				ZombieAnim.enabled = false;
 
 				break;
@@ -163,6 +199,7 @@ public abstract class ZombieBase : MonoBehaviour{
 	void Reset() //state reset logic
 	{
 		gameTime = 0.0f; //resets time
+        ZombieAnim.StopPlayback();
 		ZombieAnim.SetBool("bIdle", false);
 		ZombieAnim.SetBool("bWalk", false);
 		ZombieAnim.SetBool("bEating", false);
@@ -190,7 +227,7 @@ public abstract class ZombieBase : MonoBehaviour{
 			}
 		}
 		transform.rotation = Quaternion.Slerp(transform.rotation, endRotation, Time.deltaTime * rotateSpeed);
-		transform.localPosition += transform.forward * Time.deltaTime * speed;
+		transform.localPosition += transform.forward * Time.deltaTime * _speed;
 	}
 	void FindNewTargetPosition()
 	{
@@ -243,7 +280,7 @@ public abstract class ZombieBase : MonoBehaviour{
 		if (Utilities.instance.DistanceBetween(transform.position, target.position) > 1.5f)
 		{
 			transform.rotation = Quaternion.Slerp(transform.rotation, rotate, Time.deltaTime * rotateSpeed);
-			transform.position += transform.forward * Time.deltaTime * translateSpeed;
+			transform.position += transform.forward * Time.deltaTime * speed;
 		}
 	
 	}
@@ -266,9 +303,10 @@ public abstract class ZombieBase : MonoBehaviour{
 		HealthBar.value = health; //displays health
 		if (HealthBar.value == 0) //if health 0, change state
 		{
-			//ZombieAnim.Play("Death_02");
-			//Invoke("ActivateRagdoll", 0);
-			ChangeState(0, State.DEATH);
+            //ZombieAnim.Play("Death_02");
+            //Invoke("ActivateRagdoll", 0);
+       
+            ChangeState(0, State.DEATH);
 		}
 	}
 	void CheckCollision(RaycastHit _hit)
@@ -280,7 +318,6 @@ public abstract class ZombieBase : MonoBehaviour{
 				ChangeState(0f, State.IDLE);
 				attackCooldown = 0;
 				_hit.collider.gameObject.SendMessage("Damage", damage, SendMessageOptions.DontRequireReceiver); //send damage to player
-				Debug.Log("Hit");
 			}
 		}
 	}
@@ -297,8 +334,9 @@ public abstract class ZombieBase : MonoBehaviour{
 	}
 	public void CalculateDamage(BodyDamageInfo _damageTaken)
 	{
-	//	DamageEffect _dmgEffect = new DamageEffect();
-		switch (_damageTaken._bodyParts)
+        //	DamageEffect _dmgEffect = new DamageEffect();
+   
+        switch (_damageTaken._bodyParts)
 		{
  			case BodyDamageInfo.Parts.HEAD:
 				//activate rigidbody
@@ -319,7 +357,7 @@ public abstract class ZombieBase : MonoBehaviour{
 	}
 	public void CalculateDamage(float info)
 	{
-		health -= info;
+        health -= info;
 	}
 	void ActivateRagdoll() //function to enable the ragoll
 	{
@@ -356,6 +394,11 @@ public abstract class ZombieBase : MonoBehaviour{
 		}
 		
 	}
+    protected virtual void SpecialAttack()
+    {
+        CancelInvoke("SpecialAttack");
+        _SpecialAttack = false;
+    }
 	void OnDrawGizmos() //Draws the cube and stuff just to show you the bounding boxes of its roaming
 	{
 		Gizmos.color = Color.black;

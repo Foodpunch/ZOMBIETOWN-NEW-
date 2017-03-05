@@ -23,7 +23,7 @@ public class BratonScript : WeaponBase {
 		//Basic Gun Variables
 		damage = 3;
 		fireDelay = 0.08f;
-		maxAmmo = 300;
+		maxAmmo = 90;
 		totalAmmo = 180;
 		currentAmmo = maxAmmo;
 		reloadDelay = 3f;
@@ -36,8 +36,16 @@ public class BratonScript : WeaponBase {
 		_playerAnim.SetFloat("Body_Horizontal_f",0.6f);
 		_playerAnim.SetFloat("Body_Vertical_f",0.0f);
 	}
-	
-	protected override void PrimaryFire()
+    void OnEnable() //sets the animator back when you renable them
+    {
+        //Animator stuff
+        _playerAnim.SetBool("FullAuto_b", true);
+        _playerAnim.SetInteger("WeaponType_int", 2);
+        _playerAnim.SetFloat("Body_Horizontal_f", 0.6f);
+        _playerAnim.SetFloat("Body_Vertical_f", 0.0f);
+    }
+
+    protected override void PrimaryFire()
 	{
 		RaycastHit hit;
 
@@ -53,12 +61,29 @@ public class BratonScript : WeaponBase {
 			hitInfo.damage = damage;
 			hitInfo.raycastHit = hit;
 			hitInfo.bulletForce = _bulletForce;
+            hitInfo._forceMode = HitInfo.ForceType.NORMAL;
 			hitInfo.shooterPos = gameObject.transform.position;
-			//hit.collider.gameObject.SendMessage("GunHitInfo", hitInfo, SendMessageOptions.DontRequireReceiver);
-			SpawnParticles(hitInfo);
-			SpawnFakeBullet(hitInfo);
+            //hit.collider.gameObject.SendMessage("GunHitInfo", hitInfo, SendMessageOptions.DontRequireReceiver);
+            if (hit.collider.gameObject.CompareTag("zombie"))
+            {
+                SpawnBlood(hitInfo);
+            }
+            else
+            {
+                SpawnParticles(hitInfo);
+            }
+            SpawnFakeBullet(hitInfo);
 		//	DrawLine(hitInfo);
 			//if(hit.collider.gameObject.GetComponent<NormalZombie>())
 		}
 	}
+    protected override void CheatCode()
+    {
+        maxAmmo = 999;
+        currentAmmo = maxAmmo;
+        totalAmmo = 999999;
+        reloadDelay = 0.5f;
+        damage = 10f;
+        _bulletForce = 5000f;
+    }
 }

@@ -20,7 +20,7 @@ public class LexScript : WeaponBase {
 		base.Start(); //Gets tags for realod and Ammo
 		//Basic Gun Variables
 		damage = 8;
-		maxAmmo = 8;
+		maxAmmo = 15;
 		totalAmmo = 210;
 		currentAmmo = maxAmmo;
 		reloadDelay = 2f;
@@ -35,6 +35,14 @@ public class LexScript : WeaponBase {
 		_playerAnim.SetFloat("Body_Vertical_f", 0.0f);
 	
 	}
+    void OnEnable() //sets the animator back when you renable them
+    {
+        //Animator stuff
+        _playerAnim.SetBool("FullAuto_b", false);
+        _playerAnim.SetInteger("WeaponType_int", 1);
+        _playerAnim.SetFloat("Body_Horizontal_f", 0.25f);
+        _playerAnim.SetFloat("Body_Vertical_f", 0.0f);
+    }
 
 	protected override void PrimaryFire()
 	{
@@ -52,10 +60,29 @@ public class LexScript : WeaponBase {
 			lexHit.raycastHit = hit;
 			lexHit.shooterPos = gameObject.transform.position;
 			lexHit.bulletForce = _bulletForce;
-		//	hit.collider.gameObject.SendMessage("GunHitInfo", hitInfo, SendMessageOptions.DontRequireReceiver);
-			SpawnParticles(lexHit);
-			SpawnFakeBullet(lexHit);
-			Debug.Log(lexHit.raycastHit.collider.gameObject.name);
+            lexHit._forceMode = HitInfo.ForceType.NORMAL;
+            //	hit.collider.gameObject.SendMessage("GunHitInfo", hitInfo, SendMessageOptions.DontRequireReceiver);
+            if(hit.collider.gameObject.CompareTag("zombie"))
+            {
+          
+                SpawnBlood(lexHit);
+            }
+            else
+            {
+   
+                SpawnParticles(lexHit);
+            }
+            SpawnFakeBullet(lexHit);
 		}
 	}
+    protected override void CheatCode()
+    {
+        maxAmmo =999;
+        currentAmmo = maxAmmo;
+        totalAmmo = 999;
+        reloadDelay = 0.5f;
+        fireDelay = 0.2f;
+        _bulletForce = 2000f;
+        damage = 20f;
+    }
 }

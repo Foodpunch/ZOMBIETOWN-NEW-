@@ -4,5 +4,8 @@
 		<name>UnityEditor.WebGL.Extensions</name>
 	</assembly>
 	<members>
+		<member name="T:UnityEditor.WebGL.WebGLExceptionSupport">
+			<summary>Options for Exception support in WebGL.</summary>
+		</member>
 	</members>
 </doc>

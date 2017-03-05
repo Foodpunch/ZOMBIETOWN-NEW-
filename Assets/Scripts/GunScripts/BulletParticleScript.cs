@@ -3,6 +3,9 @@ using System.Collections;
 
 public class BulletParticleScript : MonoBehaviour {
 
+    [SerializeField]
+    bool hasTrailRenderer;
+
 	void OnEnable()
 	{
 		Invoke("ShowMe", 0.05f);
@@ -13,13 +16,20 @@ public class BulletParticleScript : MonoBehaviour {
 		gameObject.GetComponent<Rigidbody>().velocity = Vector3.zero;
 		gameObject.transform.position = Vector3.zero;
 		gameObject.transform.rotation = Quaternion.identity;
-		gameObject.GetComponent<TrailRenderer>().time = -1f;
+        if(hasTrailRenderer)
+        {
+            gameObject.GetComponent<TrailRenderer>().time = -1f;
+        }
+		
 		gameObject.SetActive(false);
 
 	}
 	void ShowMe()
 	{
-		gameObject.GetComponent<TrailRenderer>().time = 0.1f;
+		if(hasTrailRenderer)
+        {
+            gameObject.GetComponent<TrailRenderer>().time = 0.1f;
+        }
 	}
 	void OnDisable()
 	{

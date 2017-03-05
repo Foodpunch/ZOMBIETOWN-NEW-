@@ -6,7 +6,7 @@ public class LimbKnockback : MonoBehaviour,IDamagable<HitInfo> {
 	Rigidbody _rb;			//rigidbody for limb
 	Collider _col;			//collider for limb
 	[SerializeField] ParticleSystem bloodSpurt;		//blood spurt
-	[SerializeField] NormalZombie _zombie;			//zombie script
+	[SerializeField] ZombieBase _zombie;			//zombie script
 	float _damageReceived;							//damage limb has received
 	bool hasDisconnected;
 
@@ -33,7 +33,7 @@ public class LimbKnockback : MonoBehaviour,IDamagable<HitInfo> {
 
 	public void Damage(HitInfo _info)		//what happens if you take damage
 	{
-		BodyDamageInfo _damageInfo = new BodyDamageInfo();  //instantiates a damage info class
+        BodyDamageInfo _damageInfo = new BodyDamageInfo();  //instantiates a damage info class
 		switch (_bodyParts)
 		{
  			case ZombieParts.HEAD:					//if you hit the head (the zombie should die to a headshot)
@@ -63,18 +63,34 @@ public class LimbKnockback : MonoBehaviour,IDamagable<HitInfo> {
 			{
 				_rb.gameObject.transform.parent = null;			//unparents the object
 				_rb.isKinematic = false;						//allows physics to act on it
-				_rb.AddForce(CalculateHitDir(_info.shooterPos, _info.raycastHit.point) * _info.bulletForce); //adds force in correct direction
-				_zombie.GetComponent<NormalZombie>().CalculateDamage(_damageInfo);		//sends fixed damage to the body
+				switch(_info._forceMode)
+                {
+                    case HitInfo.ForceType.NORMAL:
+                        _rb.AddForce(CalculateHitDir(_info.shooterPos, _info.raycastHit.point) * _info.bulletForce); //adds force in correct direction
+                        break;
+                    case HitInfo.ForceType.EXPLOSION:
+                        _rb.AddExplosionForce(_info.bulletForce, _info.raycastHit.point,10f,2f);
+                        break;
+                }
+				_zombie.GetComponent<ZombieBase>().CalculateDamage(_damageInfo);		//sends fixed damage to the body
 			}
 			else		//if the damage the limb received doesn't exceed the threshold though, send the damage as per normal to the body
 			{
-				_zombie.GetComponent<NormalZombie>().CalculateDamage(_info.damage); //sends damage to the body
+				_zombie.GetComponent<ZombieBase>().CalculateDamage(_info.damage); //sends damage to the body
 			}
 		}
 		else
 		{
-			_rb.AddForce(CalculateHitDir(_info.shooterPos, _info.raycastHit.point) * _info.bulletForce);
-		}
+            switch (_info._forceMode)
+            {
+                case HitInfo.ForceType.NORMAL:
+                    _rb.AddForce(CalculateHitDir(_info.shooterPos, _info.raycastHit.point) * _info.bulletForce); //adds force in correct direction
+                    break;
+                case HitInfo.ForceType.EXPLOSION:
+                    _rb.AddExplosionForce(_info.bulletForce, _info.raycastHit.point, 10f, 2f);
+                    break;
+            }
+        }
 		
 	}
 	Vector3 CalculateHitDir(Vector3 _start,Vector3 _end)
@@ -103,8 +119,9 @@ public class LimbKnockback : MonoBehaviour,IDamagable<HitInfo> {
 	}
 	void DisableJoint()
 	{
-		//--Commented out because ActivateRagdoll in Death State constantly sets isKinematic to false, breaking this logic
-		_rb.isKinematic = true;
+        //--Commented out because ActivateRagdoll in Death State constantly sets isKinematic to false, breaking this logic
+        //also I forgot where to put it lol. Most probably put it after bloodspurt ends
+        _rb.isKinematic = true;
 		_rb.constraints = RigidbodyConstraints.FreezeAll;
 		_col.enabled = false;
 	}

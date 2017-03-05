@@ -30,6 +30,8 @@ public struct HitInfo //info the bullet carries
 	public Vector3 shooterPos; //where the shooter is
 	public float damage;		//how much damage
 	public float bulletForce;	//how much force
+    public enum ForceType { NORMAL,EXPLOSION}; //type of force
+    public ForceType _forceMode;
 }
 public interface IDamagable<T> //if the object can take damage, implement
 {
@@ -37,7 +39,7 @@ public interface IDamagable<T> //if the object can take damage, implement
 }
 public interface IKnockBack<T> //if the object can be knocked back, implement
 {
-	void KnockBack(T forceHit);
+	void KnockBack(T forceHit); //might be useless though since damage interface can do that too
 }
 public class BodyDamageInfo //class for body parts
 {
