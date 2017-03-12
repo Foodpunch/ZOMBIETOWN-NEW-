@@ -14,6 +14,7 @@ public class VectisScript : WeaponBase {
     float timeTillMaxSpreadAngle = 3f;
     float maxBulletSpreadAngle = 30f;
     float currFOV;
+    [SerializeField] Camera WeaponCam;
     [SerializeField] LayerMask sniperMask;
     [SerializeField] AnimationCurve bulletSpreadCurve;
     [SerializeField] OVRCameraController FOVComponent;
@@ -76,18 +77,18 @@ public class VectisScript : WeaponBase {
             SpawnFakeBullet(hitInfo);
         }
     }
-    protected override void CheckInput()
+    protected override void CheckInput() //Zoom function
     {
         base.CheckInput();
-        float secondAxis = GamepadManager.triggerL;
-        if (OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftTrigger) > 0)
-        {
-            FOVComponent.verticalFOV = Mathf.Lerp(currFOV,30f,secondAxis);
-        }
-        else
-        {
-            FOVComponent.verticalFOV = currFOV;
-        }
+       //// float secondAxis = GamepadManager.triggerL; //Trigger for zoom will be right mouse
+       // if (Input. > 0)
+       // {
+       //     FOVComponent.verticalFOV = Mathf.Lerp(currFOV,30f,secondAxis);
+       // }
+       // else
+       // {
+       //     FOVComponent.verticalFOV = currFOV;
+       // }
     }
 
     protected override void CheatCode()

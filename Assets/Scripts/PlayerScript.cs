@@ -27,7 +27,8 @@ public class PlayerScript : MonoBehaviour,IDamagable<float> {
 
     bool deathSound;
     [SerializeField] AudioClip deathSong;
-    AudioSource hurtSound;
+    [SerializeField] AudioClip hurtSound;
+    [SerializeField] AudioSource PlayerAudioSource;
     [SerializeField] Text deathText1;
     [SerializeField] Text deathText2;
     [SerializeField] GameManager _gameManager;
@@ -44,14 +45,15 @@ public class PlayerScript : MonoBehaviour,IDamagable<float> {
 	//	_rigidBody = GetComponent<Rigidbody>();
 		_charCont = GetComponent<CharacterController>();
         BloodUI = BloodUI.GetComponent<Image>();
-        hurtSound = GetComponent<AudioSource>();
+        PlayerAudioSource = GetComponent<AudioSource>();
         deathText1 = deathText1.GetComponent<Text>();
         deathText2 = deathText2.GetComponent<Text>();
         _gameManager = _gameManager.GetComponent<GameManager>();
         deathText1.text = "";
         deathText2.text = deathText1.text;
 
-	}
+
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -80,7 +82,7 @@ public class PlayerScript : MonoBehaviour,IDamagable<float> {
                 healthTimer = 0;
                 deathText1.text = "YOU DIED\n" + _gameManager.ZombieNumber.ToString() + " Kills";
                 deathText2.text = deathText1.text;
-                if(GamepadManager.AnyButtonPressed() || OVRGamepadController.GPC_GetButtonDown((int)OVRGamepadController.Button.A))
+                if(GamepadManager.AnyButtonPressed() || OVRGamepadController.GPC_GetButtonDown((int)OVRGamepadController.Button.A)) //Restart Game button
                 {
                     if(!restart)
                     {
@@ -134,9 +136,12 @@ public class PlayerScript : MonoBehaviour,IDamagable<float> {
         //healthRegen = true;
         hit = true;
         playerHitCount++;
-        if(!hurtSound.isPlaying)
+        if(!PlayerAudioSource.isPlaying)
         {
-            hurtSound.Play();
+            PlayerAudioSource.clip = hurtSound;
+            Debug.Log(PlayerAudioSource.clip);
+            PlayerAudioSource.Play();
+          //  AudioManager.PlaySFX(hurtSound.clip, AudioManager.SFXType.NORMAL, 0);
         }
         StartCoroutine("HitCoroutine");
         if(playerHitCount > 3)
