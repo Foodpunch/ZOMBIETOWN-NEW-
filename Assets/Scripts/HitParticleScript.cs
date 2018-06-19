@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class HitParticleScript : MonoBehaviour {
+public class HitParticleScript : MonoBehaviour,IPooledObj {
 
     [SerializeField] int hideTime;
 
@@ -18,4 +18,10 @@ public class HitParticleScript : MonoBehaviour {
 	{
 		CancelInvoke("HideMe"); //If disabled on it's own by pooling script, cancel the invoke lol.
 	}
+
+    public void OnObjSpawn()
+    {
+        Invoke("HideMe", hideTime);
+    }
+    
 }

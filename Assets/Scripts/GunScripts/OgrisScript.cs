@@ -59,14 +59,14 @@ public class OgrisScript : WeaponBase {
     }
     protected override void SpawnFakeBullet(HitInfo _info)
     {
-        GameObject fakeRocketClone = ObjectPoolingScript.current.GetRockets(); //gets bullets
+        GameObject fakeRocketClone = objPooler.SpawnFromPool("Rocket", shootPoint.position, Quaternion.LookRotation(_info.raycastHit.point-transform.position)); //gets bullets
         if (System.Object.ReferenceEquals(fakeRocketClone, null))
         {
             return;
         }
         //sets bullet's transform and target direction
-        fakeRocketClone.transform.localPosition = shootPoint.position;
-        fakeRocketClone.transform.LookAt(_info.raycastHit.point); //makes it face where it should hit
+     //   fakeRocketClone.transform.localPosition = shootPoint.position;
+      //  fakeRocketClone.transform.LookAt(_info.raycastHit.point); //makes it face where it should hit
         fakeRocketClone.SetActive(true);                        //sets it to true so you can see it
         fakeRocketClone.GetComponent<Rigidbody>().AddForce(fakeRocketClone.transform.forward * 25f, ForceMode.Impulse); //applies force to shoot it
         fakeRocketClone.GetComponent<RocketScript>().SetDamageInfo(_info);

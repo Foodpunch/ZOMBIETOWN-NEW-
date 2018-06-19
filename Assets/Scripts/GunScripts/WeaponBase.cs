@@ -13,7 +13,10 @@ public abstract class WeaponBase : MonoBehaviour {
 	protected float reloadDelay = 0.2f; //delay for reloading
 	protected bool automatic = false; //Semi or auto
 
-	[SerializeField]  protected Transform shootPoint; //point where the bullet flies out
+    //Getting ObjPool Instance
+    protected ObjectPoolingScript objPooler;
+
+    [SerializeField]  protected Transform shootPoint; //point where the bullet flies out
 
 	protected float _bulletForce; //Force of bullet (500 - weak||  2000 - Mid || 5000 - Strong) Probably should randomise it/calculate it based on range
 
@@ -61,6 +64,7 @@ public abstract class WeaponBase : MonoBehaviour {
 	protected abstract void PrimaryFire();
 	// Use this for initialization
 	protected virtual void Start () {
+        objPooler = ObjectPoolingScript.current;
         //	AmmoCounter = GameObject.FindGameObjectWithTag("AmmoCounter").GetComponent<Text>();
         AmmoCounter = AmmoCounter.GetComponent<Text>();
         ReloadCanvas = ReloadCanvas.GetComponent<CanvasGroup>();
@@ -91,7 +95,7 @@ public abstract class WeaponBase : MonoBehaviour {
         {
             buttonPress = Input.GetButtonDown(primaryFire);
         }
-
+        #region Obsolete
         //if (buttonPress)
         //{
         //    fireTime += Time.deltaTime; //feels like it needs to be edited.
@@ -110,35 +114,35 @@ public abstract class WeaponBase : MonoBehaviour {
         //        Invoke("SetReadyToFire", fireDelay); //timing between each bullet firing
         //    }
 
-            //float inputAxis = GamepadManager.triggerR;
+        //float inputAxis = GamepadManager.triggerR;
 
 
-            //if (automatic)
-            //{
-            //          if(inputAxis > 0 || OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.RightTrigger) > 0)
-            //          {
-            //              buttonPress = true;
-            //          }
-            //          else
-            //          {
-            //              buttonPress = false;
-            //          }
-            //}
-            //else
-            //{
-            //          bool axisInUse = false;
-            //          if(inputAxis != 0 || OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.RightTrigger) != 0)
-            //          {
-            //              if(!axisInUse)
-            //              {
-            //                  buttonPress = true;
-            //                  axisInUse = true;
-            //              }
-            //          }
-            //          if( inputAxis == 0 || OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.RightTrigger) == 0)
-            //          {
-            //              axisInUse = false;
-            //          }
+        //if (automatic)
+        //{
+        //          if(inputAxis > 0 || OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.RightTrigger) > 0)
+        //          {
+        //              buttonPress = true;
+        //          }
+        //          else
+        //          {
+        //              buttonPress = false;
+        //          }
+        //}
+        //else
+        //{
+        //          bool axisInUse = false;
+        //          if(inputAxis != 0 || OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.RightTrigger) != 0)
+        //          {
+        //              if(!axisInUse)
+        //              {
+        //                  buttonPress = true;
+        //                  axisInUse = true;
+        //              }
+        //          }
+        //          if( inputAxis == 0 || OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.RightTrigger) == 0)
+        //          {
+        //              axisInUse = false;
+        //          }
 
         //}
 
@@ -171,7 +175,7 @@ public abstract class WeaponBase : MonoBehaviour {
 				Invoke("SetReadyToFire", fireDelay); //timing between each bullet firing
 			}
          */
-
+        #endregion
         if (buttonPress)
 		{
 			fireTime += Time.deltaTime; //feels like it needs to be edited.
@@ -322,45 +326,49 @@ public abstract class WeaponBase : MonoBehaviour {
     }
 	protected void SpawnParticles(HitInfo hitInfo)//Spawns particles on EVEYRTHING you hit lel
 	{
-        GameObject hitParticle = ObjectPoolingScript.current.GetParticles();
+        GameObject hitParticle = objPooler.SpawnFromPool("hitParticle",hitInfo.raycastHit.point,Quaternion.LookRotation(hitInfo.raycastHit.normal));
 		if (System.Object.ReferenceEquals(hitParticle, null))
 		{
 			return;
 		}
-        hitParticle.transform.position = hitInfo.raycastHit.point; //sets position of the particle
+        //IDamagable _damage = hitInfo.raycastHit.collider.gameObject.GetComponent<IDamagable>();
+        //Debug.Log(_damage);
+        //_damage.Damage(hitInfo);
+        
+       // hitParticle.transform.position = hitInfo.raycastHit.point; //sets position of the particle
 //======commented out because physics.spherecast is more accurate==============================\\
 		//Vector3 incVector = hitInfo.raycastHit.point-hitInfo.shooterPos; //direction of shot
 		//Vector3 reflVector = Vector3.Reflect(incVector,hitInfo.raycastHit.normal); //calculates particle's direction
 //==============================================================================================\\
-		hitParticle.transform.rotation = Quaternion.LookRotation(hitInfo.raycastHit.normal); //changes the particle's direction
-        hitParticle.SetActive(true); //shows the particle
-		hitInfo.raycastHit.collider.gameObject.SendMessage("Damage", hitInfo,SendMessageOptions.DontRequireReceiver); //sends damage IF it has health
+	//	hitParticle.transform.rotation = Quaternion.LookRotation(hitInfo.raycastHit.normal); //changes the particle's direction
+       // hitParticle.SetActive(true); //shows the particle
+		//hitInfo.raycastHit.collider.gameObject.SendMessage("Damage", hitInfo,SendMessageOptions.DontRequireReceiver); //sends damage IF it has health
 	//	hitInfo.raycastHit.collider.gameObject.SendMessage("KnockBack", hitInfo, SendMessageOptions.DontRequireReceiver); //knocks objectback IF it can be knocked back
 	}
     protected void SpawnBlood(HitInfo _info)
     {
-        GameObject bloodSpurt = ObjectPoolingScript.current.GetBlood();
+        GameObject bloodSpurt = objPooler.SpawnFromPool("bloodSpurt", _info.raycastHit.point, Quaternion.LookRotation(_info.raycastHit.normal));
         if(System.Object.ReferenceEquals(bloodSpurt,null))
         {
             return;
         }
-        bloodSpurt.transform.position = _info.raycastHit.point;
-        bloodSpurt.transform.rotation = Quaternion.LookRotation(_info.raycastHit.normal);
-        bloodSpurt.SetActive(true);
+     //   bloodSpurt.transform.position = _info.raycastHit.point;
+       // bloodSpurt.transform.rotation = Quaternion.LookRotation(_info.raycastHit.normal);
+        //bloodSpurt.SetActive(true);
         _info.raycastHit.collider.gameObject.SendMessage("Damage", _info, SendMessageOptions.DontRequireReceiver); //sends damage IF it has health
     }
 	protected virtual void SpawnFakeBullet(HitInfo _info)//spawns a fake bullet and fires it
 	{
-		GameObject fakeBulletClone = ObjectPoolingScript.current.GetBullets(); //gets bullets
-		if (System.Object.ReferenceEquals(fakeBulletClone,null))
+        GameObject fakeBulletClone = objPooler.SpawnFromPool("bullet", shootPoint.position, Quaternion.LookRotation(_info.raycastHit.point-transform.position)); //gets bullets, makes it face where you hit
+        if (System.Object.ReferenceEquals(fakeBulletClone,null))
 		{
-			return;
+            return;
 		}
 		//sets bullet's transform and target direction
-		fakeBulletClone.transform.localPosition = shootPoint.position;
-		fakeBulletClone.transform.LookAt(_info.raycastHit.point); //makes it face where it should hit
+		//fakeBulletClone.transform.localPosition = shootPoint.position;
+		//fakeBulletClone.transform.LookAt(_info.raycastHit.point); //makes it face where it should hit
 		fakeBulletClone.GetComponent<TrailRenderer>().time = -1f; //kills the previous trail renderer
-		fakeBulletClone.SetActive(true);						//sets it to true so you can see it
+		//fakeBulletClone.SetActive(true);						//sets it to true so you can see it
 		fakeBulletClone.GetComponent<Rigidbody>().AddForce(fakeBulletClone.transform.forward * 100f, ForceMode.Impulse); //applies force to shoot it
 
 	}

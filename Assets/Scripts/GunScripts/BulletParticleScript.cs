@@ -1,16 +1,21 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class BulletParticleScript : MonoBehaviour {
+public class BulletParticleScript : MonoBehaviour,IPooledObj {
 
     [SerializeField]
     bool hasTrailRenderer;
 
-	void OnEnable()
-	{
-		Invoke("ShowMe", 0.05f);
-		Invoke("Hide", 1f);
-	}
+    public void OnObjSpawn()
+    {
+        Invoke("ShowMe", 0.05f);
+        Invoke("Hide", 1f);
+    }
+ //   void OnEnable()
+	//{
+	//	Invoke("ShowMe", 0.05f);
+	//	Invoke("Hide", 1f);
+	//}
 	void Hide()
 	{
 		gameObject.GetComponent<Rigidbody>().velocity = Vector3.zero;

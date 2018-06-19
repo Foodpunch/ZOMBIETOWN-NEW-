@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class PropZombie : MonoBehaviour,IDamagable<HitInfo> {
+public class PropZombie : MonoBehaviour,IDamagable {
 
 
 	Animator zombieAnim;		//animator for zombie

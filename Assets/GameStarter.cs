@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class GameStarter : MonoBehaviour, IDamagable<HitInfo> {
+public class GameStarter : MonoBehaviour, IDamagable {
 
     //maybe make a public enum for the UI?
     //shooting different things when the state is set differently

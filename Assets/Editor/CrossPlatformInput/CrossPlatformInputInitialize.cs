@@ -32,7 +32,7 @@ namespace UnityStandardAssets.CrossPlatformInput.Inspector
             {
                 case BuildTarget.Android:
                 case BuildTarget.iOS:
-                case BuildTarget.WP8Player:
+              //  case BuildTarget.WP8Player:
                 case BuildTarget.BlackBerry:
 				case BuildTarget.PSM: 
 				case BuildTarget.Tizen: 
@@ -88,7 +88,7 @@ namespace UnityStandardAssets.CrossPlatformInput.Inspector
         private static BuildTargetGroup[] buildTargetGroups = new BuildTargetGroup[]
             {
                 BuildTargetGroup.Standalone,
-                BuildTargetGroup.WebPlayer,
+              //  BuildTargetGroup.WebPlayer,
                 BuildTargetGroup.Android,
                 BuildTargetGroup.iOS,
                 BuildTargetGroup.WP8,

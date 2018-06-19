@@ -2,7 +2,7 @@
 using UnityEngine.UI;
 using System.Collections;
 
-public abstract class ZombieBase : MonoBehaviour{
+public abstract class ZombieBase : MonoBehaviour,IDamagable{
 
 	float gameTime;         //state timer
 	protected float attackCooldown;   //cooldown for zombie attack
@@ -332,6 +332,10 @@ public abstract class ZombieBase : MonoBehaviour{
 			return false;
 		}
 	}
+    public void Damage (HitInfo _damageTaken)
+    {
+        Debug.Log("you called?");
+    }
 	public void CalculateDamage(BodyDamageInfo _damageTaken)
 	{
         //	DamageEffect _dmgEffect = new DamageEffect();

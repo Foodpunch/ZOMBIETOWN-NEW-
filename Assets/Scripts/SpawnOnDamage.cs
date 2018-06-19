@@ -33,9 +33,9 @@ public struct HitInfo //info the bullet carries
     public enum ForceType { NORMAL,EXPLOSION}; //type of force
     public ForceType _forceMode;
 }
-public interface IDamagable<T> //if the object can take damage, implement
+public interface IDamagable //if the object can take damage, implement
 {
- 	void Damage(T damageTaken);
+ 	void Damage(HitInfo damageTaken);
 }
 public interface IKnockBack<T> //if the object can be knocked back, implement
 {

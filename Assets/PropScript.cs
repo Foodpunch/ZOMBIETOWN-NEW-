@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class PropScript : MonoBehaviour,IDamagable<HitInfo>
+public class PropScript : MonoBehaviour,IDamagable
 {
     //maybe implement some health for the props
     //so they can be destroyed after a while 

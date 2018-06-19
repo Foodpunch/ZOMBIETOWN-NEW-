@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class LimbKnockback : MonoBehaviour,IDamagable<HitInfo> {
+public class LimbKnockback : MonoBehaviour,IDamagable {
 
 	Rigidbody _rb;			//rigidbody for limb
 	Collider _col;			//collider for limb

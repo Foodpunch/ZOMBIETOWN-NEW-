@@ -1,13 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class RocketScript : MonoBehaviour {
+public class RocketScript : MonoBehaviour,IPooledObj {
 
     [SerializeField] ParticleSystem _SmokeTrail; //sweet sweet smoke trail
     [SerializeField] MeshRenderer _RocketMesh;   //mesh of the rocket
     [SerializeField] Collider _RocketCollider;   //collider of the rocket
     [SerializeField] LayerMask _explosionLayer;  //layer for physics
     HitInfo RocketInfo;                          //hit info for rocket
+    ObjectPoolingScript _objPool;                 //grabbing the obj pool
     AudioSource _ExplosionAudio;                 //audio source for the kaboom
 
     void Start()
@@ -17,26 +18,32 @@ public class RocketScript : MonoBehaviour {
         _SmokeTrail = _SmokeTrail.GetComponent<ParticleSystem>();
         _RocketMesh = _RocketMesh.GetComponent<MeshRenderer>();
         _RocketCollider = _RocketCollider.GetComponent<Collider>();
-     
+        _objPool = ObjectPoolingScript.current;     
 
     }
-    void OnEnable()  //for objectpooling
+    public void OnObjSpawn()
     {
         _SmokeTrail.Play();         //plays smoke trail when activated
         _RocketMesh.enabled = true;    //shows the rocket mesh
         _RocketCollider.enabled = true;    //enables the collider
     }
+    //void OnEnable()  //for objectpooling
+    //{
+    //    _SmokeTrail.Play();         //plays smoke trail when activated
+    //    _RocketMesh.enabled = true;    //shows the rocket mesh
+    //    _RocketCollider.enabled = true;    //enables the collider
+    //}
 
 	void OnCollisionEnter() //if it hits something, anything
     {
         //   _Explosion.SetActive(true);
         Explode();              //trigger explosion
-        GameObject explosionClone = ObjectPoolingScript.current.GetExplosion();  //gets explosion particle
+        GameObject explosionClone = _objPool.SpawnFromPool("Explosion",transform.position,Quaternion.identity);  //gets explosion particle
         if(System.Object.ReferenceEquals(explosionClone,null)) //prevents null errors
         {
             return;
         }
-        explosionClone.transform.position = transform.position; //sets explosion particle position
+      //  explosionClone.transform.position = transform.position; //sets explosion particle position
         explosionClone.SetActive(true);                        //enables it
 
         if(!_ExplosionAudio.isPlaying)       //if explosion sound is not playing
@@ -56,7 +63,18 @@ public class RocketScript : MonoBehaviour {
         Collider[] _Colliders = Physics.OverlapSphere(transform.position, 10, _explosionLayer);
         foreach(Collider col in _Colliders)
         {
-            col.gameObject.SendMessage("Damage", RocketInfo, SendMessageOptions.DontRequireReceiver);
+            IDamagable _damage = RocketInfo.raycastHit.collider.gameObject.GetComponent<IDamagable>();
+            if (_damage != null)
+            {
+                _damage.Damage(RocketInfo);
+               
+            }
+            else
+            {
+                Debug.Log("Obj can't take dmg");
+            }
+            
+            //col.gameObject.SendMessage("Damage", RocketInfo, SendMessageOptions.DontRequireReceiver);
      //       col.gameObject.GetComponent<Rigidbody>().AddExplosionForce(RocketInfo.bulletForce, transform.position, 15, 2);
          //   col.gameObject.SendMessage("KnockBack", RocketInfo);
         }

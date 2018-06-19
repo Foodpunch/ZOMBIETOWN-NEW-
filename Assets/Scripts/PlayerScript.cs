@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using UnityStandardAssets.CrossPlatformInput;
 using System.Collections;
 
-public class PlayerScript : MonoBehaviour,IDamagable<float> {
+public class PlayerScript : MonoBehaviour,IDamagable {
 
 	
 	[SerializeField] private GameObject animGameObj;
@@ -131,7 +131,7 @@ public class PlayerScript : MonoBehaviour,IDamagable<float> {
 
         }
     }
-	public void Damage(float dmg)
+	public void Damage(HitInfo dmg)
 	{
         //healthRegen = true;
         hit = true;
